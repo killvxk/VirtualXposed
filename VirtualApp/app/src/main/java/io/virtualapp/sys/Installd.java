@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.lody.virtual.GmsSupport;
 import com.lody.virtual.client.core.InstallStrategy;
@@ -19,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.virtualapp.R;
 import io.virtualapp.VCommends;
 import io.virtualapp.XApp;
 import io.virtualapp.abs.ui.VUiKit;
@@ -35,6 +38,8 @@ public class Installd {
 
     public interface UpdateListener {
         void update(AppData model);
+
+        void fail(String msg);
     }
 
     public static void addApp(AppInfoLite info, UpdateListener refreshListener) {
@@ -101,7 +106,7 @@ public class Installd {
                     if (addResult.appData != null) {
                         // mView.removeAppToLauncher(addResult.appData);
                     }
-                    throw new IllegalStateException();
+                    throw new IllegalStateException(res.error);
                 }
             }
         }).then((res) -> {
@@ -128,6 +133,11 @@ public class Installd {
                     refreshListener.update(data);
                 }
                 handleOptApp(data, info.packageName, false, refreshListener);
+            }
+        }).fail(result -> {
+            if (refreshListener != null) {
+                refreshListener.fail(result.getMessage());
+
             }
         });
     }
@@ -193,6 +203,15 @@ public class Installd {
             // Ignore
         }
         if (pkgInfo == null) {
+            return null;
+        }
+
+        if (TextUtils.equals(VirtualCore.TAICHI_PACKAGE, pkgInfo.packageName)) {
+            return null;
+        }
+
+        if (VirtualCore.get().getHostPkg().equals(pkgInfo.packageName)) {
+            Toast.makeText(VirtualCore.get().getContext(), R.string.install_self_eggs, Toast.LENGTH_SHORT).show();
             return null;
         }
 
